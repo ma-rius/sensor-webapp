@@ -1,162 +1,223 @@
 <!doctype html>
 <html>
 <head>
-  <script src="js/require.js"></script>
-  <link rel="stylesheet" href="style.css">
+    <!--  Own CSS-->
+    <link rel="stylesheet" href="css/main.css">
+    <!--  Bootstrap CSS-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <!--    jQuery & Bootstrap JS-->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <script src="js/require.js"></script>
+    <title>Sensor Classification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
 </head>
 <body>
-<form>
-  <b>Record:</b><br>
-  <label class="switch">
-    <input type="checkbox" id="record">
-    <div class="slider round"></div>
-  </label>
-  <br />
-
-  <b>Label:</b><br>
-  <select id="label"><br>
-    <option value="testing">Testing</option>
-    <option value="walking">Walking</option>
-    <option value="standing">Standing</option>
-    <option value="sitting">Sitting</option>
-  </select>
 
 
-  <b>Subject:</b><br>
-  <input type="text" id="subject"><br>
-</form>
+<br/>
 
-<br />
-V2
-<br />
-<p id="debug">Not recording.</p>
+<div class="container">
+    <div class="row"></div>
+    <div class="col-sm">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+                   aria-selected="true">Use App</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+                   aria-controls="profile" aria-selected="false">Record new data</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">...</div>
+            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                <form>
+                    <b>Record:</b><br>
+                    <label class="switch">
+                        <input type="checkbox" id="record">
+                        <div class="slider round"></div>
+                    </label>
+                    <br/>
+
+<!--                    <b>Label:</b><br>-->
+<!--                    <select id="label"><br>-->
+<!--                        <option value="jogging">Jogging</option>-->
+<!--                        <option value="walking">Walking</option>-->
+<!--                    </select>-->
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="label">Label</label>
+                        </div>
+                        <select class="custom-select" id="label">
+<!--                            <option selected>Choose...</option>-->
+                            <option selected value="running">Running</option>
+                            <option value="walking">Walking</option>
+                        </select>
+                    </div>
+
+<!--                    <b>Subject:</b><br>-->
+<!--                    <input type="text" id="subject"><br>-->
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="inputGroup-sizing-default">Subject</span>
+                        </div>
+                        <input type="text" id="subject" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+                    </div>
+                </form>
+                <p id="debug">Not recording.</p></div>
+        </div>
+    </div>
+</div>
+
 
 <script>
 
-  // Global variables to store current values.
-  var orientation_buf;
+    // Global variables to store current values.
+    var orientation_buf;
 
-  //make constructor to easily initiallize all arrays
-  function OrientationValues() {return {
-    alpha : [],
-    beta : [],
-    gamma : [],
-  }
-  };
-
-  orientation_buf=new OrientationValues(); // start empty
-
-  document.getElementById("subject").value=Math.floor((1 + Math.random()) * 0x10000).toString(16) //pick a random id
-
-
-  // How many data points have been recorded/uploaded so far?
-  var data_count = 0;
-
-  // How many data points are uploaded per second?
-  var UPLOAD_RATE = 20;
-
-
-  var write=function ()
-  {
-    document.getElementById("debug").innerHTML = "DataBase not Connected!!"
-  }
-
-  var writePoint=function(){noWrite()} //do not pass object reference otherwise noWrite might get overwritten ?!?
-
-  // Stop/Start uploading depending on switch.
-  var interval;// Global var for setInterval setting/clearing.
-  document.getElementById('record').onchange = function() {
-    if(this.checked) {
-      label = document.getElementById("label").value;
-      subject = document.getElementById("subject").value;
-      writePoint=function(){write()}
-
-      if (label) {
-        document.getElementById("debug").innerHTML = "Recording... (" + data_count + ")";
-        window.clearInterval(interval);
-
-        // Write DeviceOrientation to buffer
-        if (window.DeviceOrientationEvent) {
-          window.addEventListener('deviceorientation', function(orientation) {
-            // Read and store all acceleration and rotation values.
-            if(!isNaN(parseFloat(orientation.alpha))){ orientation_buf.alpha.push(orientation.alpha);}
-            if(!isNaN(parseFloat(orientation.beta))){ orientation_buf.beta.push(orientation.beta);}
-            if(!isNaN(parseFloat(orientation.gamma))){ orientation_buf.gamma.push(orientation.gamma);}
-          }, false);
-          interval = window.setInterval( writePoint, 1000 / UPLOAD_RATE);
-        } else {
-          document.getElementById("debug").innerHTML = "DeviceOrientation not supported."
+    //make constructor to easily initiallize all arrays
+    function OrientationValues() {
+        return {
+            alpha: [],
+            beta: [],
+            gamma: [],
         }
+    };
 
-      } else {
-        this.checked = false;
-        document.getElementById("debug").innerHTML = "Choose label first."
-      }
+    orientation_buf = new OrientationValues(); // start empty
 
-    } else {
-      window.clearInterval(interval);
-      writePoint();
-      document.getElementById("debug").innerHTML = "Not recording."
-      data_count = 0;
+    document.getElementById("subject").value = Math.floor((1 + Math.random()) * 0x10000).toString(16) //pick a random id
+
+
+    // How many data points have been recorded/uploaded so far?
+    var data_count = 0;
+
+    // How many data points are uploaded per second?
+    var UPLOAD_RATE = 20;
+
+
+    var write = function () {
+        document.getElementById("debug").innerHTML = "DataBase not Connected!!"
     }
-  }
 
-  //use "bower install requirejs influent"
-  require(["influent"], function (influent) {
-    influent
-      .createHttpClient({
-        server: [
-          {
-            protocol: "http",
-            host:     "193.196.37.63",
-            port: 8086
-            //protocol: "https",
-            //host:     "portal.teco.edu/css",
-            //port: 443
-          }
-        ],
-        username: "admin",
-        password: "admin",
+    var writePoint = function () {
+        noWrite()
+    } //do not pass object reference otherwise noWrite might get overwritten ?!?
 
-        database: "db0"
-      })
-      .then(function(client) {
-        //set the write function to empty our buffer (called periodically, see above)
-        write=function()
-        {
-          if(orientation_buf.alpha.length>0)
-          {
-            data_count++;
-
-            var v=orientation_buf; //copy old buffer to var to avoid async effects on write
-            orientation_buf=new OrientationValues(); // reset buffer
-
-            function milli_mean_int(values) {
-              var sum = values.reduce(function(a, b) { return a + b; });
-              return Math.floor(sum * 1000 / values.length);
+    // Stop/Start uploading depending on switch.
+    var interval;// Global var for setInterval setting/clearing.
+    document.getElementById('record').onchange = function () {
+        if (this.checked) {
+            label = document.getElementById("label").value;
+            subject = document.getElementById("subject").value;
+            writePoint = function () {
+                write()
             }
 
-            client.write({
-              key: "orientation",
-              tags: {
-                label: document.getElementById("label").value,
-                subject: document.getElementById("subject").value
-              },
-              fields: {
-                count: data_count, // debug var to identify missing values...
-                alpha: milli_mean_int(v.alpha), //use mean * 1000 (int for efficiency)
-                beta: milli_mean_int(v.beta),
-                gamma: milli_mean_int(v.gamma)
-              },
-              timestamp: (Date.now() * 1000000)
-            })
-              .then(function() {
+            if (label) {
                 document.getElementById("debug").innerHTML = "Recording... (" + data_count + ")";
-              });
-          }
+                window.clearInterval(interval);
+
+                // Write DeviceOrientation to buffer
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', function (orientation) {
+                        // Read and store all acceleration and rotation values.
+                        if (!isNaN(parseFloat(orientation.alpha))) {
+                            orientation_buf.alpha.push(orientation.alpha);
+                        }
+                        if (!isNaN(parseFloat(orientation.beta))) {
+                            orientation_buf.beta.push(orientation.beta);
+                        }
+                        if (!isNaN(parseFloat(orientation.gamma))) {
+                            orientation_buf.gamma.push(orientation.gamma);
+                        }
+                    }, false);
+                    interval = window.setInterval(writePoint, 1000 / UPLOAD_RATE);
+                } else {
+                    document.getElementById("debug").innerHTML = "DeviceOrientation not supported."
+                }
+
+            } else {
+                this.checked = false;
+                document.getElementById("debug").innerHTML = "Choose label first."
+            }
+
+        } else {
+            window.clearInterval(interval);
+            writePoint();
+            document.getElementById("debug").innerHTML = "Not recording."
+            data_count = 0;
         }
-      })
-  })
+    }
+
+    //use "bower install requirejs influent"
+    require(["js/influent"], function (influent) {
+        influent
+            .createHttpClient({
+                server: [
+                    {
+                        protocol: "http",
+                        host: "193.196.37.63",
+                        port: 8086
+                        //protocol: "https",
+                        //host:     "portal.teco.edu/css",
+                        //port: 443
+                    }
+                ],
+                username: "admin",
+                password: "admin",
+
+                database: "db0"
+            })
+            .then(function (client) {
+                //set the write function to empty our buffer (called periodically, see above)
+                write = function () {
+                    if (orientation_buf.alpha.length > 0) {
+                        data_count++;
+
+                        var v = orientation_buf; //copy old buffer to var to avoid async effects on write
+                        orientation_buf = new OrientationValues(); // reset buffer
+
+                        function milli_mean_int(values) {
+                            var sum = values.reduce(function (a, b) {
+                                return a + b;
+                            });
+                            return Math.floor(sum * 1000 / values.length);
+                        }
+
+                        client.write({
+                            key: "orientation",
+                            tags: {
+                                label: document.getElementById("label").value,
+                                subject: document.getElementById("subject").value
+                            },
+                            fields: {
+                                count: data_count, // debug var to identify missing values...
+                                alpha: milli_mean_int(v.alpha), //use mean * 1000 (int for efficiency)
+                                beta: milli_mean_int(v.beta),
+                                gamma: milli_mean_int(v.gamma)
+                            },
+                            timestamp: (Date.now() * 1000000)
+                        })
+                            .then(function () {
+                                document.getElementById("debug").innerHTML = "Recording... (" + data_count + ")";
+                            });
+                    }
+                }
+            })
+    })
 
 </script>
 
