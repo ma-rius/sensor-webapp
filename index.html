@@ -17,13 +17,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
+
+    <!--    require.js-->
     <script src="js/require.js"></script>
+
     <title>Sensor Classification</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 </head>
 <body>
-
 
 <br/>
 
@@ -41,7 +43,9 @@
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">...</div>
+            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                ...
+            </div>
             <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                 <form>
                     <b>Record:</b><br>
@@ -51,116 +55,211 @@
                     </label>
                     <br/>
 
-<!--                    <b>Label:</b><br>-->
-<!--                    <select id="label"><br>-->
-<!--                        <option value="jogging">Jogging</option>-->
-<!--                        <option value="walking">Walking</option>-->
-<!--                    </select>-->
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
                             <label class="input-group-text" for="label">Label</label>
                         </div>
                         <select class="custom-select" id="label">
-<!--                            <option selected>Choose...</option>-->
+                            <!--                            <option selected>Choose...</option>-->
                             <option selected value="running">Running</option>
                             <option value="walking">Walking</option>
                         </select>
                     </div>
 
-<!--                    <b>Subject:</b><br>-->
-<!--                    <input type="text" id="subject"><br>-->
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
-                            <span class="input-group-text" id="inputGroup-sizing-default">Subject</span>
+                            <span class="input-group-text" id="inputGroup-sizing-default">Name</span>
                         </div>
-                        <input type="text" id="subject" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+                        <input type="text" id="subject" class="form-control" aria-label="Sizing example input"
+                               aria-describedby="inputGroup-sizing-default" value="Marius">
                     </div>
                 </form>
-                <p id="debug">Not recording.</p></div>
+                <p id="debug"><br></p>
+                <p id="orientation_alpha"><br></p>
+                <p id="orientation_beta"><br></p>
+                <p id="orientation_gamma"><br></p>
+                <p id="acceleration_x"><br></p>
+                <p id="acceleration_y"><br></p>
+                <p id="acceleration_z"></p>
+            </div>
+
         </div>
     </div>
 </div>
+<!--<script>-->
 
+<!--    window.addEventListener('devicemotion', function (event) {-->
+<!--            document.getElementById("sensor").innerHTML = "Acceleration" + event.acceleration.y + "<br>";-->
+<!--            // console.log(event);-->
+<!--        }-->
+<!--    );-->
+
+<!--    window.addEventListener('deviceorientation', function (event) {-->
+<!--        document.getElementById("orientation").innerHTML = "Orientation: " + event.orientation_alpha + "<br>";-->
+<!--        // document.getElementById("orientation").innerHTML = window.DeviceOrientationEvent;-->
+<!--    });-->
+
+<!--    // if ('ondevicelight' in window) {-->
+<!--    //     window.addEventListener('devicelight', function(event) {-->
+<!--    //         document.getElementById("light").innerHTML = "Light: " + event.value;-->
+<!--    //     });-->
+<!--    // } else {-->
+<!--    //     console.log('devicelight event not supported');-->
+<!--    // }-->
+
+<!--    // var influent = require(['js/influent']);-->
+
+<!--    require(["js/influent"], function (influent) {-->
+<!--        influent-->
+<!--            .createHttpClient({-->
+<!--                server: [-->
+<!--                    {-->
+<!--                        protocol: "https",-->
+<!--                        host: "193.196.37.63",-->
+<!--                        port: 8086-->
+<!--                    }-->
+<!--                ],-->
+<!--                username: "",-->
+<!--                password: "",-->
+
+<!--                database: "db0"-->
+<!--            })-->
+<!--            .then(function (client) {-->
+<!--                client-->
+<!--                    .query("show databases")-->
+<!--                    .then(function (result) {-->
+<!--                       console.log(result);-->
+<!--                    });-->
+
+<!--                // super simple point-->
+<!--                // client.write_orientation({key: "myseries", value: 10});-->
+
+<!--                // more explicit point-->
+<!--                client-->
+<!--                    .write_orientation({-->
+<!--                        key: "myseries",-->
+<!--                        tags: {-->
+<!--                            some_tag: "sweet"-->
+<!--                        },-->
+<!--                        fields: {-->
+<!--                            some_field: 10-->
+<!--                        },-->
+<!--                        timestamp: Date.now()-->
+<!--                    })-->
+<!--                    .then(function () {-->
+<!--                        // ...-->
+<!--                    });-->
+<!--            });-->
+<!--    });-->
+<!--</script>-->
 
 <script>
 
     // Global variables to store current values.
     var orientation_buf;
+    var acceleration_buf;
 
     //make constructor to easily initiallize all arrays
     function OrientationValues() {
         return {
-            alpha: [],
-            beta: [],
-            gamma: [],
+            orientation_alpha: [],
+            orientation_beta: [],
+            orientation_gamma: [],
         }
-    };
+    }
+
+    function AccelerationValues() {
+        return {
+            acceleration_x: [],
+            acceleration_y: [],
+            acceleration_z: [],
+        }
+    }
 
     orientation_buf = new OrientationValues(); // start empty
-
-    document.getElementById("subject").value = Math.floor((1 + Math.random()) * 0x10000).toString(16) //pick a random id
-
-
-    // How many data points have been recorded/uploaded so far?
-    var data_count = 0;
+    acceleration_buf = new AccelerationValues(); // start empty
 
     // How many data points are uploaded per second?
     var UPLOAD_RATE = 20;
 
-
-    var write = function () {
+    // only created if client below is _not_ instantiated successfully
+    var write_orientation = function () {
         document.getElementById("debug").innerHTML = "DataBase not Connected!!"
-    }
+    };
 
-    var writePoint = function () {
-        noWrite()
-    } //do not pass object reference otherwise noWrite might get overwritten ?!?
+    var write_acceleration = function () {
+        document.getElementById("debug").innerHTML = "DataBase not Connected!!"
+    };
+
+    // var writePoint = function () {
+    //     noWrite()
+    // } //do not pass object reference otherwise noWrite might get overwritten ?!?
 
     // Stop/Start uploading depending on switch.
-    var interval;// Global var for setInterval setting/clearing.
+    var interval_orientation; // Global var for setInterval setting/clearing.
+    var interval_acceleration;
+
     document.getElementById('record').onchange = function () {
         if (this.checked) {
             label = document.getElementById("label").value;
             subject = document.getElementById("subject").value;
-            writePoint = function () {
-                write()
-            }
+            // writePoint = function () {
+            //     write_orientation()
+            // };
 
-            if (label) {
-                document.getElementById("debug").innerHTML = "Recording... (" + data_count + ")";
-                window.clearInterval(interval);
+            if (isNaN(subject)) {
+                window.clearInterval(interval_acceleration);
+                window.clearInterval(interval_orientation);
 
                 // Write DeviceOrientation to buffer
                 if (window.DeviceOrientationEvent) {
                     window.addEventListener('deviceorientation', function (orientation) {
-                        // Read and store all acceleration and rotation values.
-                        if (!isNaN(parseFloat(orientation.alpha))) {
-                            orientation_buf.alpha.push(orientation.alpha);
+                        if (!isNaN(orientation.alpha)) {
+                            orientation_buf.orientation_alpha.push(orientation.alpha);
                         }
-                        if (!isNaN(parseFloat(orientation.beta))) {
-                            orientation_buf.beta.push(orientation.beta);
+                        if (!isNaN(orientation.beta)) {
+                            orientation_buf.orientation_beta.push(orientation.beta);
                         }
-                        if (!isNaN(parseFloat(orientation.gamma))) {
-                            orientation_buf.gamma.push(orientation.gamma);
+                        if (!isNaN(orientation.gamma)) {
+                            orientation_buf.orientation_gamma.push(orientation.gamma);
                         }
                     }, false);
-                    interval = window.setInterval(writePoint, 1000 / UPLOAD_RATE);
+                    interval_orientation = window.setInterval(write_orientation, 1000 / UPLOAD_RATE);
                 } else {
                     document.getElementById("debug").innerHTML = "DeviceOrientation not supported."
                 }
 
+                // Write Acceleration to buffer
+                if (window.DeviceMotionEvent) {
+                    window.addEventListener('devicemotion', function (acceleration) {
+                        if (!isNaN(acceleration.acceleration.x)) {
+                            acceleration_buf.acceleration_x.push(acceleration.acceleration.x);
+                        }
+                        if (!isNaN(acceleration.acceleration.y)) {
+                            acceleration_buf.acceleration_y.push(acceleration.acceleration.y);
+                        }
+                        if (!isNaN(acceleration.acceleration.y)) {
+                            acceleration_buf.acceleration_z.push(acceleration.acceleration.z);
+                        }
+                    }, false);
+                    interval_acceleration = window.setInterval(write_acceleration, 1000 / UPLOAD_RATE);
+                } else {
+                    document.getElementById("debug").innerHTML = "DeviceMotion not supported."
+                }
+
             } else {
                 this.checked = false;
-                document.getElementById("debug").innerHTML = "Choose label first."
+                document.getElementById("debug").innerHTML = "Enter name first."
             }
 
         } else {
-            window.clearInterval(interval);
-            writePoint();
+            window.clearInterval(interval_orientation);
+            window.clearInterval(interval_acceleration);
+            write_orientation();
+            write_acceleration();
             document.getElementById("debug").innerHTML = "Not recording."
-            data_count = 0;
         }
-    }
+    };
 
     //use "bower install requirejs influent"
     require(["js/influent"], function (influent) {
@@ -168,12 +267,9 @@
             .createHttpClient({
                 server: [
                     {
-                        protocol: "http",
+                        protocol: "https",
                         host: "193.196.37.63",
                         port: 8086
-                        //protocol: "https",
-                        //host:     "portal.teco.edu/css",
-                        //port: 443
                     }
                 ],
                 username: "admin",
@@ -182,12 +278,12 @@
                 database: "db0"
             })
             .then(function (client) {
-                //set the write function to empty our buffer (called periodically, see above)
-                write = function () {
-                    if (orientation_buf.alpha.length > 0) {
-                        data_count++;
-
-                        var v = orientation_buf; //copy old buffer to var to avoid async effects on write
+                //set the write_orientation function to empty our buffer (called periodically, see above)
+                write_orientation = function () {
+                    // console.log(orientation_buf);
+                    if (orientation_buf.orientation_alpha.length > 0) {
+                        // console.log('succes');
+                        var v = orientation_buf; //copy old buffer to var to avoid async effects on write_orientation
                         orientation_buf = new OrientationValues(); // reset buffer
 
                         function milli_mean_int(values) {
@@ -198,28 +294,56 @@
                         }
 
                         client.write({
-                            key: "orientation",
+                            key: "orientation_b",
                             tags: {
                                 label: document.getElementById("label").value,
                                 subject: document.getElementById("subject").value
                             },
                             fields: {
-                                count: data_count, // debug var to identify missing values...
-                                alpha: milli_mean_int(v.alpha), //use mean * 1000 (int for efficiency)
-                                beta: milli_mean_int(v.beta),
-                                gamma: milli_mean_int(v.gamma)
+                                orientation_alpha: milli_mean_int(v.orientation_alpha), //use mean * 1000 (int for efficiency)
+                                orientation_beta: milli_mean_int(v.orientation_beta),
+                                orientation_gamma: milli_mean_int(v.orientation_gamma),
                             },
-                            timestamp: (Date.now() * 1000000)
-                        })
-                            .then(function () {
-                                document.getElementById("debug").innerHTML = "Recording... (" + data_count + ")";
-                            });
+                            timestamp: Date.now() * 1000000 // JavaScript records time in milliseconds, so you won't be able to get time to that precision. The smart-aleck answer is to "multiply by 1,000,000".
+                        }).then(function () {
+                            document.getElementById("orientation_alpha").innerHTML = "orientation_alpha: " + v.orientation_alpha
+                        });
                     }
-                }
+                };
+
+                write_acceleration = function () {
+                    // console.log('bbbb');
+                    if (acceleration_buf.acceleration_x.length > 0) {
+                        var v = acceleration_buf; //copy old buffer to var to avoid async effects on write_orientation
+                        acceleration_buf = new AccelerationValues(); // reset buffer
+
+                        function milli_mean_int(values) {
+                            var sum = values.reduce(function (a, b) {
+                                return a + b;
+                            });
+                            return Math.floor(sum * 1000 / values.length);
+                        }
+                        client.write({
+                            key: "acceleration",
+                            tags: {
+                                label: document.getElementById("label").value,
+                                subject: document.getElementById("subject").value
+                            },
+                            fields: {
+                                acceleration_x: milli_mean_int(v.acceleration_x),
+                                acceleration_y: milli_mean_int(v.acceleration_y),
+                                acceleration_z: milli_mean_int(v.acceleration_z),
+                            },
+                            timestamp: Date.now() * 1000000 // JavaScript records time in milliseconds, so you won't be able to get time to that precision. The smart-aleck answer is to "multiply by 1,000,000".
+                        }).then(function () {
+                            document.getElementById("acceleration_x").innerHTML = "acceleration_x: " + v.acceleration_x
+                        });
+                    }
+                };
+
             })
     })
 
 </script>
-
 </body>
 </html>
