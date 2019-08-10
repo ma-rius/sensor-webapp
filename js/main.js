@@ -210,7 +210,7 @@ write_to_array = function () {
 
                     if(result["results"]["y"] === "walking"){
                         // console.log((Date.now() - start));
-                        if((end - start) > 5000){
+                        if((end - start) > 10000){
                             document.getElementById('walk').style.display = 'none';
                             document.getElementById('prediction').style.display = 'none';
                             calories = Math.ceil((end - start) / 10000); // one calorie per 10 seconds
