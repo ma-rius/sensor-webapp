@@ -3,6 +3,7 @@
 <head>
     <!--  Own CSS-->
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/animations.css">
     <!--  Bootstrap CSS-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
@@ -21,6 +22,9 @@
     <!--    require.js-->
     <script src="js/require.js"></script>
 
+
+    <script src="js/animations.js"></script>
+
     <title>Sensor Classification</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
@@ -29,7 +33,7 @@
 
 <br/>
 
-<div class="container">
+<div class="container_run">
     <div class="row"></div>
     <div class="col-sm">
         <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -50,7 +54,30 @@
                     <div class="slider round"></div>
                 </label>
                 <br/>
-                <div id="prediction" class="values_debug"></div>
+                <div id="prediction" class="values_debug">
+                    <div class="col-sm">
+                    <div class="container_run">
+                        <div class="coast">
+                            <div class="wave-rel-wrap">
+                                <div class="wave"></div>
+                            </div>
+                        </div>
+                        <div class="coast delay">
+                            <div class="wave-rel-wrap">
+                                <div class="wave delay"></div>
+                            </div>
+                        </div>
+                        <div class="text text-w">r</div>
+                        <div class="text text-a">u</div>
+                        <div class="text text-v">n</div>
+<!--                        <div class="text text-e">n</div>-->
+<!--                        <div class="text text-e">i</div>-->
+<!--                        <div class="text text-e">n</div>-->
+<!--                        <div class="text text-e">g</div>-->
+                    </div>
+                </div>
+
+                </div>
             </div>
             <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                 <form>
@@ -95,5 +122,6 @@
 
 <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-1.9.0.js"></script>
 <script src="js/main.js"></script>
+
 </body>
 </html>

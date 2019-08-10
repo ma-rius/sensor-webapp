@@ -54,6 +54,15 @@ hr {
 /* ==========================================================================
    Author's custom styles
    ========================================================================== */
+.debug_border{
+  border: solid red;
+
+}
+#prediction{
+  padding-top: 40%;
+  padding-left: 30%;
+}
+
 /* The switch - the box around the slider */
 .switch {
   position: relative;
