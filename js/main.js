@@ -68,9 +68,16 @@ require(["js/influent"], function (influent) {
 
 // PREDICTIONS
 
+
+document.getElementById('walk').style.display = 'none';
+document.getElementById('prediction').style.display = 'none';
+document.getElementById('calories').style.display = 'none';
+
+
+
 document.getElementById('use_app').onchange = function () {
     if (this.checked) {
-        show('values_debug');
+
 
         // Write DeviceOrientation to buffer
         if (window.DeviceOrientationEvent) {
@@ -123,8 +130,10 @@ document.getElementById('use_app').onchange = function () {
         count_buf = 0;
         // write_data();
         // write_acceleration();
-        hide('values_debug');
-        document.body.style.backgroundColor = "";
+
+        document.getElementById('walk').style.display = 'none';
+        document.getElementById('prediction').style.display = 'none';
+        document.getElementById('calories').style.display = 'none';
     }
 };
 
@@ -141,6 +150,11 @@ function RollingValues() {
 
 rolling_buf = new RollingValues();
 count_buf = 0;
+
+// Variables for keeping track of the run-time
+var start;
+var end;
+var started = false;
 write_to_array = function () {
 
     // console.log(buf);
@@ -192,11 +206,36 @@ write_to_array = function () {
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function (result) {
-                    document.getElementById("prediction").innerHTML = Date.now() + ':  '+ JSON.stringify(result);
-                    if(result["results"]["y"] === "running"){
-                        document.body.style.backgroundColor = "red";
-                    } else{
-                        document.body.style.backgroundColor = "green";
+                    // document.getElementById("log").innerHTML = Date.now() + ':  '+ JSON.stringify(result);
+
+                    if(result["results"]["y"] === "walking"){
+                        // console.log((Date.now() - start));
+                        if((end - start) > 5000){
+                            document.getElementById('walk').style.display = 'none';
+                            document.getElementById('prediction').style.display = 'none';
+                            calories = Math.ceil((end - start) / 10000); // one calorie per 10 seconds
+                            text = "You burned " + calories + "calories<br>🥳";
+                            text = "<span class=\"text-no-animation\">\You burned \ "+ calories + " \calories<br>🥳</span>"
+                            document.getElementById('calories-text').innerHTML = text;
+                            document.getElementById('calories').style.display = 'block';
+                        }
+                        else {
+                            start = Date.now();
+                            document.getElementById('walk').style.display = 'block';
+                            document.getElementById('calories').style.display = 'none';
+                            document.getElementById('prediction').style.display = 'none';
+                        }
+                        started = false;
+                    // case 'running'
+                    } else {
+                        if(!started){
+                            start = Date.now();
+                            started = true;
+                        }
+                        end = Date.now()
+                        document.getElementById('walk').style.display = 'none';
+                        document.getElementById('calories').style.display = 'none';
+                        document.getElementById('prediction').style.display = 'block';
                     }
 
                 }});
